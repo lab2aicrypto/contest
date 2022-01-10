@@ -15,7 +15,6 @@ def add_feed(mentor_page_id: str, coin: str, buy: float, sell: float,
     :param start_time: 예측 시작 시간. kst 시간 기준.
     :return:
     """
-    start_time = start_time.replace(second=0, microsecond=0)
     end_time = start_time + timedelta(minutes=predict_minute_range)
 
     params = {

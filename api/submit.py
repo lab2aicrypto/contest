@@ -11,7 +11,7 @@ def add_feed(mentor_page_id: str, coin: str, buy: float, sell: float,
     :param coin: 예측한 가상화폐의 심볼 대문자 문자열. ex) KRW-BTC
     :param buy: 매수가
     :param sell: 매도가
-    :param predict_minute_range: 예측 길이
+    :param predict_minute_range: 예측 길이 (분)
     :param start_time: 예측 시작 시간. kst 시간 기준.
     :return:
     """

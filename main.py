@@ -1,5 +1,6 @@
 import numpy as np
 from datetime import datetime, timedelta
+from dateutil.parser import parse
 from statsmodels.tsa.arima.model import ARIMA
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -19,24 +20,31 @@ def send_prediction(mentor_page_id, model_fit, coin, minute, predict_minute_rang
     :param buffer: 예측 게시 버퍼 시간
     :return:
     """
-    # 실시간 예측 결과 제출
-    kst_now = datetime.now().replace(second=0, microsecond=0)
+    # 최근 캔들 하나 새로 수집
+    # 데이터 수집에 사용되는 시점 파라미터(to)는 utc 시각 기준으로 사용합니다. 업비트 OpenAPI Documentation 참조.
     utc_now = datetime.utcnow().replace(second=0, microsecond=0)
-
     recent_candle = call_api(coin, minute, count=1, to=utc_now)
-    new_obs = recent_candle["trade_price"].apply(np.log)
+    recent_price = recent_candle["trade_price"].apply(np.log)
 
-    model_fit = model_fit.append(new_obs.values, refit=False)
-
+    # 미래 예측
+    # 데이터 수집 -> 예측 -> 게시에 소요되는 시간만큼 예측을 더 길게 해야합니다. (buffer 변수 참조)
+    # 예를 들어, 15분 길이 예측에서 데이터 수집 -> 예측 -> 게시까지 3분이 소요되면 18분 길이로 예측한 뒤 18분 중 처음 3분을 건너뛰고 뒤의 15분 예측 결과를 사용합니다.
+    model_fit = model_fit.append(recent_price.values, refit=False)
     pred = model_fit.forecast(buffer + predict_minute_range)
-    pred = np.exp(pred[buffer:])
 
+    # 예측 결과로부터 매수가, 매도가를 추출합니다.
+    # 로그 변환된 예측 값을 역변환하고, buffer 만큼 건너뛴 예측 결과를 사용합니다.
+    pred = np.exp(pred[buffer:])
     buy_index = np.argmin(pred)
     buy = min(pred)
     sell = max(pred[buy_index:])
 
-    start_time = kst_now + timedelta(minutes=buffer)
+    # 예측 시작 시점은 kst 시각 기준입니다.
+    # 예측 시작 시점은 마지막으로 수집한 데이터로부터 buffer(분) 만큼 건너뛴 시점으로 지정합니다.
+    last_time = parse(recent_candle.iloc[-1]["candle_date_time_kst"])
+    start_time = last_time + timedelta(minutes=buffer)
 
+    # 매도가가 매수가보다 높은 경우 예측 결과를 전송합니다.
     if sell > buy:
         add_feed(mentor_page_id=mentor_page_id, coin=coin, buy=buy, sell=sell,
                  predict_minute_range=predict_minute_range, start_time=start_time)
@@ -44,12 +52,12 @@ def send_prediction(mentor_page_id, model_fit, coin, minute, predict_minute_rang
 
 if __name__ == '__main__':
     # 비트코인, 1분봉 데이터 사용
-    # 15분 길이 에측, 예측 게시 버퍼 시간 5분
+    # 15분 길이 예측, 예측 게시 버퍼 시간 3분
     mentor_page_id = "123456789"
     coin = "KRW-BTC"
     minute = 1
     predict_minute_range = 15
-    buffer = 5
+    buffer = 3
 
     # 간단한 예시를 위해 최근 캔들 200개만 수집. 200개 이상의 캔들 수집 시 'to' 파라미터를 변경해가며 반복 수집하면 됩니다.
     # 초당 10회 이상 요청 시 수집에 실패할 수 있습니다. 자세한 내용은 업비트 OpenAPI Documentation 참조.
@@ -65,7 +73,7 @@ if __name__ == '__main__':
     model_fit = model.fit()
     print(model_fit.summary())
 
-    # 1분마다 예측 수행
+    # 스케줄러를 사용하여 1분마다 실시간 예측 함수 실행
     scheduler = BlockingScheduler()
     scheduler.add_job(send_prediction,
                       'cron',

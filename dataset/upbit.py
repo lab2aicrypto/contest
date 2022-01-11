@@ -10,9 +10,9 @@ def call_api(coin: str, minute: int, count: int, to: datetime) -> pd.DataFrame:
     업비트 OpenAPI 캔들 데이터 수집
 
     :param coin: 가상화폐 심볼 대문자 문자열. ex) KRW-BTC
-    :param minute: 분 단위
-    :param to: 마지막 캔들 시각. utc 시간 기준.
-    :param count: 캔들 개수
+    :param minute: 캔들 분 단위
+    :param to: 마지막 캔들 시각. utc 시간 기준
+    :param count: 한 번 요청 당 가져올 캔들 개수
     :return: 캔들 데이터
     """
     if isinstance(to, str):

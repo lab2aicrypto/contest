@@ -67,6 +67,7 @@ import pandas as pd
 from datetime import datetime
 from dataset.upbit import call_api
 
+# 비트코인, 1분봉, 가장 최근 캔들 10개 수집 시
 coin: str = 'KRW-BTC'
 minute: int = 1
 to: datetime = datetime.utcnow().replace(second=0, microsecond=0)
@@ -99,6 +100,7 @@ start_time: 예측 시작 시점. kst 시각 기준
 from datetime import datetime
 from api.submit import add_feed
 
+# 비트코인, 51,356,000원 매수, 51,456,000원 매도, 2022.01.09 12:05:00~2022.01.09 12:19:59(15분 길이) 예측 결과 제출 시
 mentor_page_id: str = '123456789'
 coin: str = 'KRW-BTC'
 buy: float = 51356000

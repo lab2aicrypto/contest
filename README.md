@@ -82,6 +82,10 @@ api > submit.py 참조
 
 mentor_page_id: 참가팀 별 id (안내 예정)
 
+username: 참가팀 별 유저 이름 (안내 예정)
+
+password: 참가팀 별 비밀번호 (안내 예정)
+
 coin: 마켓 명 대문자 문자열. ex) 'KRW-BTC' (원화-비트코인)
 
 buy: 매수가
@@ -101,14 +105,16 @@ from datetime import datetime
 from api.submit import add_feed
 
 # 비트코인, 51,356,000원 매수, 51,456,000원 매도, 2022.01.09 12:05:00~2022.01.09 12:19:59(15분 길이) 예측 결과 제출 시
-mentor_page_id: str = '123456789'
+mentor_page_id: str = '참가팀 별 멘토 ID'
+username = '참가팀 별 유저이름'
+password = '참가팀 별 비밀번호'
 coin: str = 'KRW-BTC'
 buy: float = 51356000
 sell: float = 51456000
 predict_minute_range: int = 15
 start_time: datetime = datetime(2022, 1, 9, 12, 5)
 
-add_feed(mentor_page_id, coin, buy, sell, predict_minute_range, start_time)
+add_feed(mentor_page_id, username, password, coin, buy, sell, predict_minute_range, start_time)
 ```
 
 ### 데이터 수집, 모델 학습, 실시간 예측
@@ -126,7 +132,8 @@ from dataset.upbit import call_api
 from api.submit import add_feed
 
 
-def send_prediction(mentor_page_id, model_fit, coin, minute, predict_minute_range, buffer):
+def send_prediction(mentor_page_id: str, username: str, password: str, model_fit,
+                    coin: str, minute: int, predict_minute_range: int, buffer: int):
     """
     학습된 모델을 입력받아 실시간 예측을 수행하는 함수
 
@@ -164,14 +171,16 @@ def send_prediction(mentor_page_id, model_fit, coin, minute, predict_minute_rang
 
     # 매도가가 매수가보다 높은 경우 예측 결과를 전송합니다.
     if sell > buy:
-        add_feed(mentor_page_id=mentor_page_id, coin=coin, buy=buy, sell=sell,
+        add_feed(mentor_page_id=mentor_page_id, username=username, password=password, coin=coin, buy=buy, sell=sell,
                  predict_minute_range=predict_minute_range, start_time=start_time)
 
 
 if __name__ == '__main__':
     # 비트코인, 1분봉 데이터 사용
     # 15분 길이 예측, 예측 게시 버퍼 시간 3분
-    mentor_page_id = "123456789"
+    mentor_page_id = "참가팀 별 멘토 ID"
+    username = "참가팀 별 유저이름"
+    password = "참가팀 별 비밀번호"
     coin = "KRW-BTC"
     minute = 1
     predict_minute_range = 15
@@ -195,7 +204,7 @@ if __name__ == '__main__':
     scheduler = BlockingScheduler()
     scheduler.add_job(send_prediction,
                       'cron',
-                      args=[mentor_page_id, model_fit, coin, minute, predict_minute_range, buffer],
+                      args=[mentor_page_id, username, password, model_fit, coin, minute, predict_minute_range, buffer],
                       minute='*')
     scheduler.start()
 ```

@@ -8,11 +8,14 @@ from dataset.upbit import call_api
 from api.submit import add_feed
 
 
-def send_prediction(mentor_page_id, model_fit, coin, minute, predict_minute_range, buffer):
+def send_prediction(mentor_page_id: str, username: str, password: str, model_fit,
+                    coin: str, minute: int, predict_minute_range: int, buffer: int):
     """
     학습된 모델을 입력받아 실시간 예측을 수행하는 함수
 
     :param mentor_page_id: 참가팀 별 id
+    :param username: 참가팀 별 유저 이름
+    :param password: 참가팀 별 비밀번호
     :param model_fit: 학습된 모델
     :param coin: 코인 종류
     :param minute: 학습에 사용한 데이터의 분 봉 단위
@@ -46,14 +49,16 @@ def send_prediction(mentor_page_id, model_fit, coin, minute, predict_minute_rang
 
     # 매도가가 매수가보다 높은 경우 예측 결과를 전송합니다.
     if sell > buy:
-        add_feed(mentor_page_id=mentor_page_id, coin=coin, buy=buy, sell=sell,
+        add_feed(mentor_page_id=mentor_page_id, username=username, password=password, coin=coin, buy=buy, sell=sell,
                  predict_minute_range=predict_minute_range, start_time=start_time)
 
 
 if __name__ == '__main__':
     # 비트코인, 1분봉 데이터 사용
     # 15분 길이 예측, 예측 게시 버퍼 시간 3분
-    mentor_page_id = "123456789"
+    mentor_page_id = "참가팀 별 멘토 ID"
+    username = "참가팀 별 유저이름"
+    password = "참가팀 별 비밀번호"
     coin = "KRW-BTC"
     minute = 1
     predict_minute_range = 15
@@ -77,6 +82,6 @@ if __name__ == '__main__':
     scheduler = BlockingScheduler()
     scheduler.add_job(send_prediction,
                       'cron',
-                      args=[mentor_page_id, model_fit, coin, minute, predict_minute_range, buffer],
+                      args=[mentor_page_id, username, password, model_fit, coin, minute, predict_minute_range, buffer],
                       minute='*')
     scheduler.start()

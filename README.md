@@ -40,13 +40,15 @@
 
 ## 시뮬레이션 평가
 1. 예측 당 평균 수익률로 평가. (수익률: 매도가÷매수가 / 예측 당 평균 수익률: 수익률 총합÷예측 횟수)
-2. 예측의 길이(예측 종료 시간 - 예측 시작 시간)는 15분, 30분, 1시간, 3시간, 6시간, 12시간, 24시간 중에서 수행되어야 함. (그 외는 무효 처리)
-3. 예측 길이의 50% 시점 이내 매수가 진입에 실패한 경우 해당 예측은 무효 처리. ex) 30분 길이의 예측은 15분 내 매수가 진입 성공하여야 함.
-4. 매수가 진입에 성공하였으나 예측 종료 시간 전까지 매도가 도달에 실패한 경우 예측 종료 시점의 가격으로 매도 처리.
-5. 예측 시작 시점이 예측 제출 시점 이전일 경우 무효 처리.
-6. 동일 코인에 대해 예측 시간이 중복되는 경우 먼저 수행된 예측만 반영되며, 뒤에 이루어진 예측은 무효 처리.
-7. 서로 다른 코인에 대한 예측은 예측 시간이 중복되어도 모두 수익률 계산에 반영됨.
-8. 시뮬레이션 평가 기간 동안 최소 7회 이상의 예측을 수행하여야하며, 7회 미만으로 예측할 경우 0점 처리.
+2. 수익률 평가 시 수수료는 고려하지 않음.
+3. 예측의 길이(예측 종료 시간 - 예측 시작 시간)는 15분, 30분, 1시간, 3시간, 6시간, 12시간, 24시간 중에서 수행되어야 함. (그 외는 무효 처리)
+4. 예측 길이의 50% 시점 이내 매수가 진입에 실패한 경우 해당 예측은 무효 처리. ex) 30분 길이의 예측은 15분 내 매수가 진입 성공하여야 함.
+5. 매수가 진입에 성공하였으나 예측 종료 시간 전까지 매도가 도달에 실패한 경우 예측 종료 시점의 가격으로 매도 처리.
+6. 예측 시작 시점이 예측 제출 시점 이전일 경우 무효 처리.
+7. 동일 코인에 대해 예측 시간이 중복되는 경우 먼저 수행된 예측만 반영되며, 뒤에 이루어진 예측은 무효 처리.
+8. 서로 다른 코인에 대한 예측은 예측 시간이 중복되어도 모두 수익률 계산에 반영됨.
+9. 매수가와 매도가는 업비트 기준으로 각 코인의 호가 단위에 맞추어 제출하지 않으면 평가에 반영되지 않습니다.
+10. 시뮬레이션 평가 기간 동안 최소 7회 이상의 예측을 수행하여야하며, 7회 미만으로 예측할 경우 0점 처리.
 
 ## 가이드라인
 
@@ -80,17 +82,15 @@ candle_df: pd.DataFrame = call_api(coin=coin, minute=minute, to=to, count=count)
 
 api > submit.py 참조
 
-mentor_page_id: 참가팀 별 id (안내 예정)
-
 username: 참가팀 별 유저 이름 (안내 예정)
 
 password: 참가팀 별 비밀번호 (안내 예정)
 
 coin: 마켓 명 대문자 문자열. ex) 'KRW-BTC' (원화-비트코인)
 
-buy: 매수가
+buy: 매수가. 업비트 기준 코인 별 호가 단위에 맞추어야 합니다. (util > trim.py 호가 단위 변환 함수 참조)
 
-sell: 매도가
+sell: 매도가. 업비트 기준 코인 별 호가 단위에 맞추어야 합니다.
 
 predict_minute_range: 예측 길이(분)
 
@@ -105,7 +105,6 @@ from datetime import datetime
 from api.submit import add_feed
 
 # 비트코인, 51,356,000원 매수, 51,456,000원 매도, 2022.01.09 12:05:00~2022.01.09 12:19:59(15분 길이) 예측 결과 제출 시
-mentor_page_id: str = '참가팀 별 멘토 ID'
 username = '참가팀 별 유저이름'
 password = '참가팀 별 비밀번호'
 coin: str = 'KRW-BTC'
@@ -114,7 +113,7 @@ sell: float = 51456000
 predict_minute_range: int = 15
 start_time: datetime = datetime(2022, 1, 9, 12, 5)
 
-add_feed(mentor_page_id, username, password, coin, buy, sell, predict_minute_range, start_time)
+add_feed(username, password, coin, buy, sell, predict_minute_range, start_time)
 ```
 
 ### 데이터 수집, 모델 학습, 실시간 예측
@@ -130,14 +129,16 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 
 from dataset.upbit import call_api
 from api.submit import add_feed
+from util.util import trim
 
 
-def send_prediction(mentor_page_id: str, username: str, password: str, model_fit,
+def send_prediction(username: str, password: str, model_fit,
                     coin: str, minute: int, predict_minute_range: int, buffer: int):
     """
     학습된 모델을 입력받아 실시간 예측을 수행하는 함수
 
-    :param mentor_page_id: 참가팀 별 id
+    :param username: 참가팀 별 유저 이름
+    :param password: 참가팀 별 비밀번호
     :param model_fit: 학습된 모델
     :param coin: 코인 종류
     :param minute: 학습에 사용한 데이터의 분 봉 단위
@@ -155,36 +156,40 @@ def send_prediction(mentor_page_id: str, username: str, password: str, model_fit
     # 데이터 수집 -> 예측 -> 게시에 소요되는 시간만큼 예측을 더 길게 해야합니다. (buffer 변수 참조)
     # 예를 들어, 15분 길이 예측에서 데이터 수집 -> 예측 -> 게시까지 3분이 소요되면 18분 길이로 예측한 뒤 18분 중 처음 3분을 건너뛰고 뒤의 15분 예측 결과를 사용합니다.
     model_fit = model_fit.append(recent_price.values, refit=False)
-    pred = model_fit.forecast(buffer + predict_minute_range)
+    pred = model_fit.forecast(buffer + int(predict_minute_range/minute))
 
     # 예측 결과로부터 매수가, 매도가를 추출합니다.
     # 로그 변환된 예측 값을 역변환하고, buffer 만큼 건너뛴 예측 결과를 사용합니다.
     pred = np.exp(pred[buffer:])
     buy_index = np.argmin(pred)
-    buy = min(pred)
-    sell = max(pred[buy_index:])
+
+    buy = trim(min(pred))
+    sell = trim(max(pred[buy_index:]))
 
     # 예측 시작 시점은 kst 시각 기준입니다.
     # 예측 시작 시점은 마지막으로 수집한 데이터로부터 buffer(분) 만큼 건너뛴 시점으로 지정합니다.
     last_time = parse(recent_candle.iloc[-1]["candle_date_time_kst"])
-    start_time = last_time + timedelta(minutes=buffer)
+    start_time = last_time + timedelta(minutes=int(buffer*minute))
 
     # 매도가가 매수가보다 높은 경우 예측 결과를 전송합니다.
     if sell > buy:
-        add_feed(mentor_page_id=mentor_page_id, username=username, password=password, coin=coin, buy=buy, sell=sell,
+        add_feed(username=username, password=password, coin=coin, buy=buy, sell=sell,
                  predict_minute_range=predict_minute_range, start_time=start_time)
+    else:
+        print(f"매도가가 매수가보다 낮아 예측을 게시하지 않습니다. 매수가: {buy}, 매도가: {sell}")
 
 
 if __name__ == '__main__':
-    # 비트코인, 1분봉 데이터 사용
-    # 15분 길이 예측, 예측 게시 버퍼 시간 3분
-    mentor_page_id = "참가팀 별 멘토 ID"
-    username = "참가팀 별 유저이름"
-    password = "참가팀 별 비밀번호"
+    # 비트코인, 5분봉 데이터 사용
+    # 24시간(1440분) 길이 예측, 예측 게시 버퍼 시간 5분(버퍼시간=buffer*minute)
+    # 참가팀 별로 안내받은 username, password 를 사용하여 예측 결과를 제출합니다.
+    # 아래에 입력된 테스트 계정을 사용하여 자유롭게 테스트 해보실 수 있습니다.
+    username = "test"
+    password = "1234"
     coin = "KRW-BTC"
-    minute = 1
-    predict_minute_range = 15
-    buffer = 3
+    minute = 5
+    predict_minute_range = 1440
+    buffer = 1
 
     # 간단한 예시를 위해 최근 캔들 200개만 수집. 200개 이상의 캔들 수집 시 'to' 파라미터를 변경해가며 반복 수집하면 됩니다.
     # 초당 10회 이상 요청 시 수집에 실패할 수 있습니다. 자세한 내용은 업비트 OpenAPI Documentation 참조.
@@ -204,9 +209,10 @@ if __name__ == '__main__':
     scheduler = BlockingScheduler()
     scheduler.add_job(send_prediction,
                       'cron',
-                      args=[mentor_page_id, username, password, model_fit, coin, minute, predict_minute_range, buffer],
+                      args=[username, password, model_fit, coin, minute, predict_minute_range, buffer],
                       minute='*')
     scheduler.start()
+
 ```
 
 ## 기타 문의사항

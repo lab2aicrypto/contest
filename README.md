@@ -116,6 +116,16 @@ start_time: datetime = datetime(2022, 1, 9, 12, 5)
 add_feed(username, password, coin, buy, sell, predict_minute_range, start_time)
 ```
 
+### 제출한 예측 조회
+
+add_feed 함수를 사용하여 제출한 예측 결과는 http://admin.cosign.cc/ 에서 조회하실 수 있습니다.
+
+참가팀 별로 안내받은 username, password 를 사용하여 로그인할 수 있습니다.
+
+※ 해당 웹페이지 상단에 있는 sign 등록하기 버튼을 사용하여 수동으로 예측을 게시할 경우 부정행위로 간주합니다.
+
+![cosign-admin](https://user-images.githubusercontent.com/97106147/153547594-e348806d-0a11-4360-a940-35b6df166f9f.jpeg)
+
 ### 데이터 수집, 모델 학습, 실시간 예측
 
 main.py 참조

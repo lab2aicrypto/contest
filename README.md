@@ -82,9 +82,9 @@ candle_df: pd.DataFrame = call_api(coin=coin, minute=minute, to=to, count=count)
 
 api > submit.py 참조
 
-username: 참가팀 별 유저 이름 (안내 예정)
+username: 참가팀 별 유저 이름 (안내 예정. 테스트 계정 username: "test")
 
-password: 참가팀 별 비밀번호 (안내 예정)
+password: 참가팀 별 비밀번호 (안내 예정, 테스트 계정 password: "1234")
 
 coin: 마켓 명 대문자 문자열. ex) 'KRW-BTC' (원화-비트코인)
 
